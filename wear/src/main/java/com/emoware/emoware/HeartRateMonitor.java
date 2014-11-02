@@ -19,6 +19,8 @@ public class HeartRateMonitor implements SensorEventListener {
     private Sensor mHeartRateSensor;
     private Context context;
 
+    private String lastHeartRate = "";
+
     public HeartRateMonitor(Context context) {
         this.context = context;
     }
@@ -39,11 +41,15 @@ public class HeartRateMonitor implements SensorEventListener {
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         if(sensorEvent.values[0] > 0){
-                Log.d(TAG, "sensor event: " + sensorEvent.accuracy + " = " + sensorEvent.values[0]);
+                Log.v(TAG, "sensor event: " + sensorEvent.accuracy + " = " + sensorEvent.values[0]);
                 String heartRateStr = String.valueOf(sensorEvent.values[0]);
-                sendHeartRate(heartRateStr);
-                //accuracy.setText("Accuracy: "+sensorEvent.accuracy);
-                //sensorInformation.setText(sensorEvent.sensor.toString());
+                // only send changes
+                if (!lastHeartRate.equals(heartRateStr)) {
+                    sendHeartRate(heartRateStr);
+                    //accuracy.setText("Accuracy: "+sensorEvent.accuracy);
+                    //sensorInformation.setText(sensorEvent.sensor.toString());
+                    lastHeartRate = heartRateStr;
+                }
         }
     }
 
@@ -54,9 +60,8 @@ public class HeartRateMonitor implements SensorEventListener {
 
     protected void sendHeartRate(String heartRate) {
         Log.i(TAG, "sending heart rate = " + heartRate);
-        Uri uri = Uri.parse(Constants.URI_HEART_RATE + heartRate);
         Intent mServiceIntent = new Intent(context, SensorService.class);
-        mServiceIntent.setData(uri);
+        mServiceIntent.setData(Util.makeControlUri(Constants.URI_HEART_RATE, heartRate));
         context.startService(mServiceIntent);
     }
 }
